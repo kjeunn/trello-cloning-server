@@ -1,12 +1,16 @@
 {
+  "extends": ["airbnb-base", "prettier"],
   "parserOptions": {
-    "ecmaVersion": 6,
+    "ecmaVersion": 8,
+    "ecmaFeatures": {
+      "jsx": true,
+      "experimentalObjectRestSpread": true
+    },
     "sourceType": "module"
   },
-  "extends": ["airbnb-base", "prettier"],
   "env": {
-    "browser": true,
-    "node": true
+    "node": true,
+    "es6": true
   },
   "rules": {
     "max-length": 0 // 0으로 설정하면 에러 검출 X
