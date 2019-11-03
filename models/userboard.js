@@ -7,9 +7,8 @@ module.exports = sequelize => {
     },
     updatedAt: {
       type: "TIMESTAMP",
-      defaultValue: sequelize.literal(
-        "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
-      ),
+      defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
+      onUpdate: sequelize.literal("CURRENT_TIMESTAMP"),
       allowNull: false
     }
   });
