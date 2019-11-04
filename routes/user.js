@@ -1,17 +1,36 @@
 const router = require("express").Router();
 const db = require("../db");
+// const token = require("../lib/jwt-token");
 
 // 로그인
-router.post("/signin", async (req, res) => {});
+router.post("/signin", async (req, res) => {
+  const matchedUserList = await db.user.signin.post(req.body);
+  if (matchedUserList.length !== 1) {
+    res.json("failure");
+  } else {
+    res.json("success");
+  }
+});
 
 // 로그아웃
-router.get("/signout", (req, res) => {});
+router.get("/signout", (req, res) => {
+  return res.redirect("/");
+});
 
 // 회원가입
-router.post("/signup", async (req, res) => {});
+router.post("/signup", async (req, res) => {
+  const createdUser = await db.user.signup.post(req.body);
+  if (createdUser === "existed user") {
+    res.json("failure");
+  } else {
+    res.json("success");
+  }
+});
 
 // mypage 내정보 보여주기
-router.get("/setting", (req, res) => {});
+router.get("/setting", (req, res) => {
+  // return await db.user.signin.post(req.body);
+});
 
 // mypage 내정보 수정 name, password
 router.put("/setting", async (req, res) => {});
