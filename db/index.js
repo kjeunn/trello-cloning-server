@@ -32,102 +32,137 @@ module.exports = {
         return "existed user";
       }
     },
-    board: {
+    boardList: {
       // /user/board-list
+      get: async body => {
+        const boardList = await models.board
+          .findAll({
+            attributes: ["title"],
+            include: [
+              {
+                model: models.user,
+                where: { id: body.userId }
+              }
+            ]
+          })
+          // .then(res => {
+          //   res.forEach((element, index) => {
+          //     res[index] = element.dataValues.title;
+          //   });
+          //   return res;
+          // })
+          .then(res =>
+            res.map(board => {
+              return board.dataValues.title;
+            })
+          )
+          .catch(err => console.error(err));
+        return boardList;
+      }
+    },
+    board: {
+      // /user/board/:boardId
       get: async boardId => {
         const lists = await models.list.findAll({
           attributes: ["id", "title"],
-          where: { boardId }
+          where: { fk_boardId: boardId }
         });
         lists.map(async listObject => {
           const cards = await models.card.findAll({
             attributes: ["id", "title", "description"],
-            where: { listId: listObject.id }
+            where: { fk_listId: listObject.id }
           });
-          return { id: listObject.id, title: listObject.title, cards };
+          console.log({ id: listObject.id, title: listObject.title, cards });
+          // return { id: listObject.id, title: listObject.title, cards };
         });
       },
-      // /user/board
-      async get(userId) {
-        // let boards = await models.board.findAll({
-        await models.board
-          .findAll({
-            attributes: ["id", "title"],
-            where: { userId }
+      post: async body => {
+        const searchUser = await models.user
+          .findOne({ where: { id: body.userId } })
+          .then(res => res)
+          .catch(err => console.error(err));
+        if (searchUser === null) {
+          return "failure";
+        }
+        const createdBoard = await models.board
+          .create({ title: body.boardTitle })
+          .then(res => res)
+          .catch(err => console.error(err));
+        if (createdBoard === undefined) {
+          return "failure";
+        }
+        const createdUserBoard = await models.userboard
+          .create({
+            boardId: createdBoard.id,
+            userId: body.userId
           })
-          .then(res => res.json(res))
+          .then(res => res)
           .catch(err => console.error(err));
+        if (createdUserBoard === undefined) {
+          return "failure";
+        }
+        return createdUserBoard;
       },
-      post(data) {
-        models.board
-          .create({ title: data })
-          .then(res => res.json(res))
+      put: async body => {
+        const updatedBoard = await models.board
+          .update({ title: body.boardTitle }, { where: { id: body.boardId } })
+          .then(res => res)
           .catch(err => console.error(err));
+        if (updatedBoard[0] !== 1) {
+          return "failure";
+        }
+        return "success";
       },
-      put() {
-        models.board
-          .update(
-            { title: newTitle },
-            { where: { boardId } },
-            { returning: true }
-          )
-          .then(res => res.json(res[1][0]))
+      delete: async body => {
+        const deletedBoard = await models.board
+          .destroy({ where: { id: body.boardId } })
+          .then(res => res)
           .catch(err => console.error(err));
-      },
-      delete() {
-        models.board
-          .destroy({ where: { boardId } })
-          .then(res => res.json({}))
-          .catch(err => console.error(err));
+        if (deletedBoard === 0) {
+          return "failure";
+        }
+        return "success";
       }
+    }
+  },
+  list: {
+    post(data) {
+      models.list
+        .create({ title: data })
+        .then(res => res.json(res))
+        .catch(err => console.error(err));
     },
-    list: {
-      post(data) {
-        models.list
-          .create({ title: data })
-          .then(res => res.json(res))
-          .catch(err => console.error(err));
-      },
-      put() {
-        models.list
-          .update(
-            { title: newTitle },
-            { where: { listId } },
-            { returning: true }
-          )
-          .then(res => res.json(res[1][0]))
-          .catch(err => console.error(err));
-      },
-      delete() {
-        models.list
-          .destroy({ where: { listId } })
-          .then(res => res.json({}))
-          .catch(err => console.error(err));
-      }
+    put() {
+      models.list
+        .update({ title: newTitle }, { where: { listId } }, { returning: true })
+        .then(res => res.json(res[1][0]))
+        .catch(err => console.error(err));
     },
-    card: {
-      post(data) {
-        models.card
-          .create({ title: data })
-          .then(res => res.json(res))
-          .catch(err => console.error(err));
-      },
-      put() {
-        models.card
-          .update(
-            { title: newTitle },
-            { where: { cardId } },
-            { returning: true }
-          )
-          .then(res => res.json(res[1][0]))
-          .catch(err => console.error(err));
-      },
-      delete() {
-        models.card
-          .destroy({ where: { cardId } })
-          .then(res => res.json({}))
-          .catch(err => console.error(err));
-      }
+    delete() {
+      models.list
+        .destroy({ where: { listId } })
+        .then(res => res.json({}))
+        .catch(err => console.error(err));
+    }
+  },
+  card: {
+    post(data) {
+      models.card
+        .create({ title: data })
+        .then(res => res.json(res))
+        .catch(err => console.error(err));
+    },
+    put() {
+      models.card
+        .update({ title: newTitle }, { where: { cardId } }, { returning: true })
+        .then(res => res.json(res[1][0]))
+        .catch(err => console.error(err));
+    },
+    delete() {
+      models.card
+        .destroy({ where: { cardId } })
+        .then(res => res.json({}))
+        .catch(err => console.error(err));
     }
   }
 };
