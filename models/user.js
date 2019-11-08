@@ -33,7 +33,10 @@ module.exports = (sequelize, DataTypes) => {
     }
   });
   User.associate = models => {
-    User.belongsToMany(models.board, { through: models.userboard });
+    User.belongsToMany(models.board, {
+      through: models.userboard,
+      foreignKey: "userId"
+    });
   };
   return User;
 };
