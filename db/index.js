@@ -35,6 +35,7 @@ module.exports = {
     boardList: {
       // /user/board-list
       get: async body => {
+        console.log(body);
         const boardList = await models.board
           .findAll({
             attributes: ["title"],
@@ -126,23 +127,44 @@ module.exports = {
     }
   },
   list: {
-    post(data) {
-      models.list
-        .create({ title: data })
-        .then(res => res.json(res))
+    post: async body => {
+      const searchBoard = await models.board
+        .findOne({
+          where: { id: body.boardId }
+        })
+        .then(res => res)
         .catch(err => console.error(err));
+      if (searchBoard === null) {
+        return "failure";
+      }
+      const createdList = await models.list
+        .create({ title: body.listTitle, fk_boardId: body.boardId })
+        .then(res => res)
+        .catch(err => console.error(err));
+      if (createdList === undefined) {
+        return "failure";
+      }
+      return createdList;
     },
-    put() {
-      models.list
-        .update({ title: newTitle }, { where: { listId } }, { returning: true })
-        .then(res => res.json(res[1][0]))
+    put: async body => {
+      const updatedList = await models.list
+        .update({ title: body.listTitle }, { where: { id: body.listId } })
+        .then(res => res)
         .catch(err => console.error(err));
+      if (updatedList[0] !== 1) {
+        return "failure";
+      }
+      return "success";
     },
-    delete() {
-      models.list
-        .destroy({ where: { listId } })
-        .then(res => res.json({}))
+    delete: async body => {
+      const deletedList = await models.list
+        .destroy({ where: { id: body.listId } })
+        .then(res => res)
         .catch(err => console.error(err));
+      if (deletedList === 0) {
+        return "failure";
+      }
+      return "success";
     }
   },
   card: {
