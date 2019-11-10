@@ -33,13 +33,34 @@ router.delete("/list", async (req, res) => {
 });
 
 // add card
-router.post("/card", function(req, res) {});
+router.post("/card", async (req, res) => {
+  const createdCard = await db.card.post(req.body);
+  if (createdCard === "failure") {
+    res.json("failure");
+  } else {
+    res.json("success");
+  }
+});
 
 // update card
-router.put("/card", function(req, res) {});
+router.put("/card", async (req, res) => {
+  const updatedCard = await db.card.put(req.body);
+  if (updatedCard === "failure") {
+    res.json("failure");
+  } else {
+    res.json("success");
+  }
+});
 
 // delete card
-router.delete("/card", function(req, res) {});
+router.delete("/card", async (req, res) => {
+  const deletedCard = await db.card.delete(req.body);
+  if (deletedCard === "failure") {
+    res.json("failure");
+  } else {
+    res.json("success");
+  }
+});
 
 router.use("/user", user);
 

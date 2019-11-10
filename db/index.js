@@ -168,23 +168,55 @@ module.exports = {
     }
   },
   card: {
-    post(data) {
-      models.card
-        .create({ title: data })
-        .then(res => res.json(res))
+    post: async body => {
+      const searchList = await models.list
+        .findOne({
+          where: { id: body.listId }
+        })
+        .then(res => res)
         .catch(err => console.error(err));
+      console.log(searchList);
+      if (searchList === null) {
+        return "failure";
+      }
+      const createdCard = await models.card
+        .create({
+          title: body.cardTitle,
+          description: body.cardDiscript,
+          fk_listId: body.listId
+        })
+        .then(res => res)
+        .catch(err => console.error(err));
+      if (createdCard === undefined) {
+        return "failure";
+      }
+      return createdCard;
     },
-    put() {
-      models.card
-        .update({ title: newTitle }, { where: { cardId } }, { returning: true })
-        .then(res => res.json(res[1][0]))
+    put: async body => {
+      const updatedCard = await models.card
+        .update(
+          {
+            title: body.cardTitle,
+            description: body.cardDiscript
+          },
+          { where: { id: body.cardId } }
+        )
+        .then(res => res)
         .catch(err => console.error(err));
+      if (updatedCard[0] !== 1) {
+        return "failure";
+      }
+      return "success";
     },
-    delete() {
-      models.card
-        .destroy({ where: { cardId } })
-        .then(res => res.json({}))
+    delete: async body => {
+      const deletedCard = await models.card
+        .destroy({ where: { id: body.cardId } })
+        .then(res => res)
         .catch(err => console.error(err));
+      if (deletedCard === 0) {
+        return "failure";
+      }
+      return "success";
     }
   }
 };
