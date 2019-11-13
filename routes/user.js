@@ -9,10 +9,10 @@ router.post("/signin", async (req, res) => {
   if (matchedUser === "failure") {
     res.json("failure");
   } else {
-    const token = jwt.sign({ email: this.email }, env.SECRET_KEY_JWT, {
+    const token = jwt.sign({ email: req.body.email }, env.SECRET_KEY_JWT, {
       expiresIn: "7d"
     });
-    res.cookie(token);
+    res.cookie("trello", token);
     res.json("success");
   }
 });
@@ -33,10 +33,40 @@ router.post("/signup", async (req, res) => {
 });
 
 // mypage 내정보 보여주기
-router.get("/setting", (req, res) => {});
+router.get("/setting", async (req, res) => {
+  const userEmail = jwt.verify(req.cookies.trello, env.SECRET_KEY_JWT);
+  const userInfo = await db.user.setting.get(userEmail);
+  if (userInfo === "failure") {
+    res.json("failure");
+  } else {
+    res.json({
+      name: userInfo.dataValues.name,
+      email: userInfo.dataValues.email
+    });
+  }
+});
 
 // mypage 내정보 수정 name, password
-router.put("/setting", async (req, res) => {});
+router.put("/setting", async (req, res) => {
+  const userEmail = jwt.verify(req.cookies.trello, env.SECRET_KEY_JWT);
+  const updatedUserInfo = await db.user.setting.put(userEmail, req.body);
+  if (updatedUserInfo === "failure") {
+    res.json("failure");
+  } else {
+    res.json("success");
+  }
+});
+
+// 회원탈퇴 delete account
+router.delete("/account", async (req, res) => {
+  const userEmail = jwt.verify(req.cookies.trello, env.SECRET_KEY_JWT);
+  const deletedUser = await db.user.account.delete(userEmail, req.body);
+  if (deletedUser === "failure") {
+    res.json("failure");
+  } else {
+    res.json("success");
+  }
+});
 
 // user의 전체 boardlist 가져옴
 router.get("/board-list", async (req, res) => {
