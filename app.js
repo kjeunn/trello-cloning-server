@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const routes = require("./routes");
-// const compression = require('compression');
+
 const app = express();
 
 const PORT = process.env.NODE_ENV === "production" ? 3001 : 3002;
@@ -11,6 +12,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 // URL-encoded는 주소 형식(URI)으로 데이터를 보내는 방식이다.
 // false면 노드의 querystring 모듈을 사용하여 쿼리스트링을 해석하고, true면 qs 모듈을 사용하여 쿼리스트링을 해석한다.
+app.use(cookieParser());
 
 app.use("/", routes);
 

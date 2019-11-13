@@ -64,97 +64,176 @@ module.exports = {
         return "success";
       }
     },
-    boardList: {
-      // /user/board-list
+    setting: {
       get: async body => {
-        const boardList = await models.board
-          .findAll({
-            attributes: ["title"],
-            include: [
-              {
-                model: models.user,
-                where: { id: body.userId }
-              }
-            ]
-          })
-          // .then(res => {
-          //   res.forEach((element, index) => {
-          //     res[index] = element.dataValues.title;
-          //   });
-          //   return res;
-          // })
-          .then(res =>
-            res.map(board => {
-              return board.dataValues.title;
-            })
-          )
-          .catch(err => console.error(err));
-        return boardList;
-      }
-    },
-    board: {
-      // /user/board/:boardId
-      get: async boardId => {
-        const lists = await models.list.findAll({
-          attributes: ["id", "title"],
-          where: { fk_boardId: boardId }
-        });
-        lists.map(async listObject => {
-          const cards = await models.card.findAll({
-            attributes: ["id", "title", "description"],
-            where: { fk_listId: listObject.id }
-          });
-          console.log({ id: listObject.id, title: listObject.title, cards });
-          // return { id: listObject.id, title: listObject.title, cards };
-        });
-      },
-      post: async body => {
-        const searchUser = await models.user
-          .findOne({ where: { id: body.userId } })
+        const userInfo = await models.user
+          .findOne({ where: { email: body.email } })
           .then(res => res)
           .catch(err => console.error(err));
+        if (userInfo === null) {
+          return "failure";
+        }
+        return userInfo;
+      },
+      put: async (userEmail, body) => {
+        console.log("바디", body);
+        console.log("유저이메일", userEmail);
+        const searchUser = await models.user.findOne({
+          where: { email: userEmail.email }
+        });
         if (searchUser === null) {
           return "failure";
         }
-        const createdBoard = await models.board
-          .create({ title: body.boardTitle })
-          .then(res => res)
-          .catch(err => console.error(err));
-        if (createdBoard === undefined) {
-          return "failure";
-        }
-        const createdUserBoard = await models.userboard
-          .create({
-            boardId: createdBoard.id,
-            userId: body.userId
-          })
-          .then(res => res)
-          .catch(err => console.error(err));
-        if (createdUserBoard === undefined) {
-          return "failure";
-        }
-        return createdUserBoard;
-      },
-      put: async body => {
-        const updatedBoard = await models.board
-          .update({ title: body.boardTitle }, { where: { id: body.boardId } })
-          .then(res => res)
-          .catch(err => console.error(err));
-        if (updatedBoard[0] !== 1) {
-          return "failure";
-        }
-        return "success";
-      },
-      delete: async body => {
-        const deletedBoard = await models.board
-          .destroy({ where: { id: body.boardId } })
-          .then(res => res)
-          .catch(err => console.error(err));
-        if (deletedBoard === 0) {
-          return "failure";
-        }
-        return "success";
+        return new Promise(resolve => {
+          crypto.pbkdf2(
+            body.password,
+            searchUser.dataValues.salt,
+            100000,
+            64,
+            "sha512",
+            async (err, key) => {
+              const updatedUserInfo = await models.user
+                .update(
+                  {
+                    name: body.name,
+                    password: key.toString("base64")
+                  },
+                  { where: { email: userEmail.email } }
+                )
+                .then(res => res)
+                .catch(err => console.error(err));
+              if (updatedUserInfo[0] !== 1) {
+                resolve("failure");
+              }
+              resolve("success");
+            }
+          );
+        });
       }
+    },
+    account: {
+      delete: async (userEmail, body) => {
+        const searchUser = await models.user.findOne({
+          where: { email: userEmail.email }
+        });
+        if (searchUser === null) {
+          return "failure";
+        }
+        let exactPassword = false;
+        return new Promise(resolve => {
+          crypto.pbkdf2(
+            body.password,
+            searchUser.dataValues.salt,
+            100000,
+            64,
+            "sha512",
+            async (err, key) => {
+              if (key.toString("base64") === searchUser.dataValues.password) {
+                exactPassword = true;
+                await models.user.destroy({
+                  where: { email: userEmail.email }
+                });
+                resolve("success");
+              }
+              if (!exactPassword) {
+                resolve("failure");
+              }
+            }
+          );
+        });
+      }
+    }
+  },
+  boardList: {
+    // /user/board-list
+    get: async body => {
+      const boardList = await models.board
+        .findAll({
+          attributes: ["title"],
+          include: [
+            {
+              model: models.user,
+              where: { id: body.userId }
+            }
+          ]
+        })
+        // .then(res => {
+        //   res.forEach((element, index) => {
+        //     res[index] = element.dataValues.title;
+        //   });
+        //   return res;
+        // })
+        .then(res =>
+          res.map(board => {
+            return board.dataValues.title;
+          })
+        )
+        .catch(err => console.error(err));
+      return boardList;
+    }
+  },
+  board: {
+    // /user/board/:boardId
+    get: async boardId => {
+      const lists = await models.list.findAll({
+        attributes: ["id", "title"],
+        where: { fk_boardId: boardId }
+      });
+      lists.map(async listObject => {
+        const cards = await models.card.findAll({
+          attributes: ["id", "title", "description"],
+          where: { fk_listId: listObject.id }
+        });
+        console.log({ id: listObject.id, title: listObject.title, cards });
+        // return { id: listObject.id, title: listObject.title, cards };
+      });
+    },
+    post: async body => {
+      const searchUser = await models.user
+        .findOne({ where: { id: body.userId } })
+        .then(res => res)
+        .catch(err => console.error(err));
+      if (searchUser === null) {
+        return "failure";
+      }
+      const createdBoard = await models.board
+        .create({ title: body.boardTitle })
+        .then(res => res)
+        .catch(err => console.error(err));
+      if (createdBoard === undefined) {
+        return "failure";
+      }
+      const createdUserBoard = await models.userboard
+        .create({
+          boardId: createdBoard.id,
+          userId: body.userId
+        })
+        .then(res => res)
+        .catch(err => console.error(err));
+      if (createdUserBoard === undefined) {
+        return "failure";
+      }
+      return createdUserBoard;
+    },
+    put: async body => {
+      const updatedBoard = await models.board
+        .update({ title: body.boardTitle }, { where: { id: body.boardId } })
+        .then(res => res)
+        .catch(err => console.error(err));
+      if (updatedBoard[0] !== 1) {
+        return "failure";
+      }
+      return "success";
+    },
+    delete: async body => {
+      const deletedBoard = await models.board
+        .destroy({ where: { id: body.boardId } })
+        .then(res => res)
+        .catch(err => console.error(err));
+      if (deletedBoard === 0) {
+        return "failure";
+      }
+      return "success";
     }
   },
   list: {
