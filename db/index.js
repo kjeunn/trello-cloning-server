@@ -1,41 +1,72 @@
+const crypto = require("crypto");
 const models = require("../models");
 
 module.exports = {
   user: {
     signin: {
       post: async body => {
-        const matchedUser = await models.user
-          .findAll({
-            where: { email: body.email, password: body.password }
-          })
-          .then(res => res)
-          .catch(err => console.error(err));
-        return matchedUser;
+        const matchedUser = await models.user.findOne({
+          where: { email: body.email }
+        });
+        if (matchedUser === null) {
+          return "failure";
+        }
+        let exactPassword = false;
+        return new Promise(resolve => {
+          crypto.pbkdf2(
+            body.password,
+            matchedUser.dataValues.salt,
+            100000,
+            64,
+            "sha512",
+            (err, key) => {
+              if (key.toString("base64") === matchedUser.dataValues.password) {
+                exactPassword = true;
+              }
+              if (!exactPassword) {
+                resolve("failure");
+              }
+              resolve("success");
+            }
+          );
+        });
       }
     },
     signup: {
       post: async body => {
-        const matchedUser = await models.user.findAll({
+        const matchedUser = await models.user.findOne({
           where: { email: body.email }
         });
-        if (matchedUser.length !== 1) {
-          const createdUserInfo = await models.user
-            .create({
-              name: body.name,
-              email: body.email,
-              password: body.password
-            })
-            .then(res => res)
-            .catch(err => console.error(err));
-          return createdUserInfo;
+        if (matchedUser !== null) {
+          return "existed user";
         }
-        return "existed user";
+        crypto.randomBytes(64, (err, buf) => {
+          crypto.pbkdf2(
+            body.password,
+            buf.toString("base64"),
+            100000,
+            64,
+            "sha512",
+            async (err, key) => {
+              const createdUserInfo = await models.user
+                .create({
+                  name: body.name,
+                  email: body.email,
+                  password: key.toString("base64"),
+                  salt: buf.toString("base64")
+                })
+                .then(res => res)
+                .catch(err => console.error(err));
+              return createdUserInfo;
+            }
+          );
+        });
+        return "success";
       }
     },
     boardList: {
       // /user/board-list
       get: async body => {
-        console.log(body);
         const boardList = await models.board
           .findAll({
             attributes: ["title"],
@@ -175,7 +206,6 @@ module.exports = {
         })
         .then(res => res)
         .catch(err => console.error(err));
-      console.log(searchList);
       if (searchList === null) {
         return "failure";
       }

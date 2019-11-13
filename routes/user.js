@@ -1,13 +1,18 @@
 const router = require("express").Router();
+const jwt = require("jsonwebtoken");
 const db = require("../db");
-// const token = require("../lib/jwt-token");
+const env = require("../.env.json");
 
 // 로그인
 router.post("/signin", async (req, res) => {
-  const matchedUserList = await db.user.signin.post(req.body);
-  if (matchedUserList.length !== 1) {
+  const matchedUser = await db.user.signin.post(req.body);
+  if (matchedUser === "failure") {
     res.json("failure");
   } else {
+    const token = jwt.sign({ email: this.email }, env.SECRET_KEY_JWT, {
+      expiresIn: "7d"
+    });
+    res.cookie(token);
     res.json("success");
   }
 });
@@ -72,7 +77,6 @@ router.delete("/board", async (req, res) => {
 // 해당 board의 전체 list + card 보여줌
 router.get("/board/:boardId", async (req, res) => {
   const allListCard = await db.user.board.get(req.params.boardId);
-  console.log("리스트카드", allListCard);
   res.json(allListCard);
 });
 
