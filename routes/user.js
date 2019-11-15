@@ -70,7 +70,8 @@ router.delete("/account", async (req, res) => {
 
 // user의 전체 boardlist 가져옴
 router.get("/board-list", async (req, res) => {
-  const boardList = await db.user.boardList.get(req.body);
+  const userEmail = jwt.verify(req.cookies.trello, env.SECRET_KEY_JWT);
+  const boardList = await db.user.boardList.get(userEmail);
   res.json(boardList);
 });
 
