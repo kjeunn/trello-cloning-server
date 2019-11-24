@@ -144,11 +144,9 @@ module.exports = {
     boardList: {
       // /user/board-list
       get: async userEmail => {
-        console.log("바디", userEmail);
         const searchUserId = await models.user.findOne({
           where: { email: userEmail.email }
         });
-        console.log(searchUserId);
         const boardList = await models.board
           .findAll({
             attributes: ["id", "title"],
@@ -171,7 +169,6 @@ module.exports = {
             })
           )
           .catch(err => console.error(err));
-        console.log(boardList);
         return boardList;
       }
     },
@@ -200,12 +197,11 @@ module.exports = {
         );
         return listsAndCards;
       },
-      post: async body => {
-        const searchUser = await models.user
-          .findOne({ where: { id: body.userId } })
-          .then(res => res)
-          .catch(err => console.error(err));
-        if (searchUser === null) {
+      post: async (userEmail, body) => {
+        const searchUserId = await models.user.findOne({
+          where: { email: userEmail.email }
+        });
+        if (searchUserId === null) {
           return "failure";
         }
         const createdBoard = await models.board
@@ -218,7 +214,7 @@ module.exports = {
         const createdUserBoard = await models.userboard
           .create({
             boardId: createdBoard.id,
-            userId: body.userId
+            userId: searchUserId.dataValues.id
           })
           .then(res => res)
           .catch(err => console.error(err));
@@ -304,7 +300,8 @@ module.exports = {
       const createdCard = await models.card
         .create({
           title: body.cardTitle,
-          description: body.cardDiscript,
+          description: "",
+          // description: body.cardDiscript,
           fk_listId: body.listId
         })
         .then(res => res)
@@ -319,7 +316,7 @@ module.exports = {
         .update(
           {
             title: body.cardTitle,
-            description: body.cardDiscript
+            description: body.cardDescript
           },
           { where: { id: body.cardId } }
         )
