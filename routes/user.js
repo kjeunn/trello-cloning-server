@@ -19,7 +19,9 @@ router.post("/signin", async (req, res) => {
 
 // 로그아웃
 router.get("/signout", (req, res) => {
-  return res.redirect("/");
+  res
+    .clearCookie("trello", { path: "/" })
+    .send(JSON.stringify(req.cookies.trello));
 });
 
 // 회원가입
@@ -77,7 +79,8 @@ router.get("/board-list", async (req, res) => {
 
 // create new board
 router.post("/board", async (req, res) => {
-  const userBoard = await db.user.board.post(req.body);
+  const userEmail = jwt.verify(req.cookies.trello, env.SECRET_KEY_JWT);
+  const userBoard = await db.user.board.post(userEmail, req.body);
   if (userBoard === "failure") {
     res.json("failure");
   } else {
