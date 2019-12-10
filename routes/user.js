@@ -13,7 +13,7 @@ router.post("/signin", async (req, res) => {
       expiresIn: "7d"
     });
     res.cookie("trello", token);
-    res.json("success");
+    res.send(JSON.stringify({ status: "success", trello: token }));
   }
 });
 
@@ -27,9 +27,11 @@ router.get("/signout", (req, res) => {
 // 회원가입
 router.post("/signup", async (req, res) => {
   const createdUser = await db.user.signup.post(req.body);
-  if (createdUser === "existed user") {
+  if (createdUser === "failure") {
     res.json("failure");
-  } else {
+  } else if (createdUser === "existed user") {
+    res.json("existed user");
+  } else if (createdUser === "success") {
     res.json("success");
   }
 });
