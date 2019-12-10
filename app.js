@@ -10,7 +10,8 @@ const PORT = process.env.NODE_ENV === "production" ? 3001 : 3002;
 app.use(
   cors({
     credentials: true,
-    origin: "http://localhost:3000"
+    origin:
+      "http://trello-cloning-client-deploy.s3-website.ap-northeast-2.amazonaws.com"
   })
 );
 app.use(express.json());
