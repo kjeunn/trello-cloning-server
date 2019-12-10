@@ -34,6 +34,10 @@ module.exports = {
     },
     signup: {
       post: async body => {
+        const checkEmail = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        if (!checkEmail.test(body.email)) {
+          return "failure";
+        }
         const matchedUser = await models.user.findOne({
           where: { email: body.email }
         });
