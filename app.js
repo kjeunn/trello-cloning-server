@@ -7,13 +7,19 @@ const app = express();
 
 const PORT = process.env.NODE_ENV === "production" ? 3001 : 3002;
 
+const whitelist = [
+  "http://trello-cloning-client-deploy.s3-website.ap-northeast-2.amazonaws.com",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000"
+];
+
 app.use(
   cors({
     credentials: true,
-    origin:
-      "http://trello-cloning-client-deploy.s3-website.ap-northeast-2.amazonaws.com"
+    origin: whitelist
   })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 // URL-encoded는 주소 형식(URI)으로 데이터를 보내는 방식이다.
